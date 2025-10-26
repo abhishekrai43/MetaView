@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MetaView Debug Logs</title>
+  <style>
+    body {
+      font-family: monospace;
+      background: #1a1a1a;
+      color: #0f0;
+      padding: 20px;
+      margin: 0;
+    }
+    h1 {
+      color: #0ff;
+    }
+    #logs {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      background: #000;
+      padding: 20px;
+      border: 1px solid #0f0;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    button {
+      background: #0f0;
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 10px 5px;
+      font-family: monospace;
+      font-weight: bold;
+    }
+    button:hover {
+      background: #0ff;
+    }
+    .info {
+      color: #ff0;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>MetaView Debug Logs</h1>
+  <p class="info">This page displays all debug logs from MetaView stored in localStorage.</p>
+  <div>
+    <button onclick="loadLogs()">Refresh Logs</button>
+    <button onclick="downloadLogs()">Download Logs</button>
+    <button onclick="clearLogs()">Clear Logs</button>
+    <button onclick="copyLogs()">Copy to Clipboard</button>
+  </div>
+  <pre id="logs">Loading logs...</pre>
+
+  <script>
+    function loadLogs() {
+      try {
+        const stored = localStorage.getItem('metaview-debug-log');
+        if (stored) {
+          const entries = JSON.parse(stored);
+          const logText = entries.map(e => {
+            const dataStr = e.data ? '\n' + JSON.stringify(e.data, null, 2) : '';
+            return `[${e.timestamp}] ${e.message}${dataStr}`;
+          }).join('\n\n');
+          document.getElementById('logs').textContent = logText || 'No logs found.';
+        } else {
+          document.getElementById('logs').textContent = 'No logs found in localStorage.';
+        }
+      } catch (e) {
+        document.getElementById('logs').textContent = 'Error loading logs: ' + e.message;
+      }
+    }
+
+    function downloadLogs() {
+      const logText = document.getElementById('logs').textContent;
+      const blob = new Blob([logText], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `metaview-debug-${Date.now()}.log`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }
+
+    function clearLogs() {
+      if (confirm('Clear all logs from localStorage?')) {
+        localStorage.removeItem('metaview-debug-log');
+        document.getElementById('logs').textContent = 'Logs cleared.';
+      }
+    }
+
+    function copyLogs() {
+      const logText = document.getElementById('logs').textContent;
+      navigator.clipboard.writeText(logText).then(() => {
+        alert('Logs copied to clipboard!');
+      }).catch(err => {
+        alert('Failed to copy: ' + err.message);
+      });
+    }
+
+    // Auto-load on page load
+    loadLogs();
+
+    // Auto-refresh every 2 seconds
+    setInterval(loadLogs, 2000);
+  </script>
+</body>
+</html>

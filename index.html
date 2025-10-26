@@ -1,0 +1,181 @@
+<!-- Run locally: serve the folder with any static server (e.g., `npx http-server .`) and open the reported URL. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <meta name="description" content="MetaView: Overlay date, place, and device on your photos. Offline-first PWA with export & share.">
+  <title>MetaView</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1>MetaView</h1>
+    <p class="tagline">Image-first PWA — bake timestamp, place, and device onto your photos.</p>
+    <p class="privacy-note">Nothing leaves your device unless you opt-in to reverse-geocode.</p>
+  </header>
+
+  <nav class="app-nav" aria-label="Primary">
+    <button data-nav="home" class="nav-btn" aria-controls="homeView">Home</button>
+    <button data-nav="preview" class="nav-btn" aria-controls="previewView">Preview</button>
+  </nav>
+
+  <main>
+    <div id="insecureContextNotice" class="warning" hidden>
+      Location access is blocked because this page is not served over HTTPS. Open the app via HTTPS to allow geolocation and reverse geocoding.
+    </div>
+    <section id="homeView" class="view active" aria-live="polite">
+      <h2>Import or Capture</h2>
+      <div class="actions">
+        <button id="takeBtn" class="primary-btn">Take Photo</button>
+        <button id="importBtn" class="secondary-btn">Check Image Metadata</button>
+        <input type="file" id="takeInput" accept="image/*" capture="environment" hidden>
+        <input type="file" id="fileInput" accept="image/*" multiple="false" hidden>
+      </div>
+      <div id="dropZone" class="drop-zone" tabindex="0" role="button" aria-label="Drop an image here">
+        Drop an image or click to browse (for checking metadata).
+      </div>
+      <p class="export-hint">Tap Share to save a baked image once you complete the overlay.</p>
+    </section>
+
+    <section id="previewView" class="view" hidden>
+      <h2>Preview &amp; Overlay</h2>
+      
+      <!-- Shared canvas -->
+      <div class="canvas-wrap">
+        <canvas id="previewCanvas" aria-label="Photo preview with metadata overlay"></canvas>
+      </div>
+      
+      <!-- Import mode: Read-only metadata viewer -->
+      <div id="importModeView" hidden>
+        <div id="metadataDisplay" class="metadata-viewer">
+          <h3>Photo Metadata</h3>
+          <div id="metadataContent"></div>
+        </div>
+        
+        <div class="metadata-share-controls">
+          <h4>Share Options</h4>
+          <p class="hint-text">Choose what information to include when sharing:</p>
+          <label class="toggle">
+            <input type="checkbox" id="shareTimestamp" checked>
+            Include Timestamp
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="shareLocation" checked>
+            Include Location (GPS)
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="shareDevice" checked>
+            Include Device Info
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="shareOwnerOnly">
+            Owner Signature Only (hide location/device)
+          </label>
+        </div>
+        
+        <div class="export-actions">
+          <button id="shareImportBtn" class="primary-btn">Share Selected Metadata</button>
+          <button id="backBtn" class="link-btn">Back to Home</button>
+        </div>
+      </div>
+      
+      <!-- Capture mode: Full editing and export -->
+      <div id="captureModeView" hidden>
+        <div id="noImageNotice" class="notice" hidden>Import a photo to see the preview.</div>
+        <div id="noExifNotice" class="notice" hidden>
+          This image has little or no EXIF metadata. Many messaging apps (e.g., WhatsApp, Telegram) strip timestamps, GPS, and device info. We'll use your current location (if allowed) and a best-guess device name.
+        </div>
+        <div id="geoPrompt" class="notice" hidden>
+          <p id="geoPromptMsg">This app requests location access to tag photos with your current place. The browser will prompt for permission.</p>
+          <button id="geoRequestBtn" class="primary-btn">Enable location</button>
+        </div>
+        <div id="overlayWarning" class="warning" hidden>
+          This photo looks like it was already baked with MetaView. Want to view the original?
+          <button id="viewOriginalBtn" class="link-btn">Open Original</button>
+        </div>
+        <form id="overlayControls" class="controls" autocomplete="off">
+          <label>
+            Overlay position
+            <select id="positionSelect">
+              <option value="bottom-left">Bottom left</option>
+              <option value="bottom-right">Bottom right</option>
+            </select>
+          </label>
+          <label>
+            Font size
+            <input type="range" id="fontSlider" min="14" max="36" value="20">
+          </label>
+          <label>
+            Background opacity
+            <input type="range" id="opacitySlider" min="0.02" max="0.9" step="0.01" value="0.65">
+          </label>
+          <label>
+            Device label
+            <span class="inline-row">
+              <input type="text" id="deviceLabelInput" placeholder="Override detected model (optional)" style="flex:1 1 auto;">
+              <span id="modelResolveSpinner" class="spinner" hidden aria-label="Resolving device model"></span>
+            </span>
+          </label>
+          <label>
+            Owner contact (optional)
+            <input type="text" id="ownerInput" placeholder="e.g., your.email@example.com">
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="reverseToggle" checked>
+            Reverse-geocode GPS into city &amp; country (enabled by default)
+          </label>
+          
+          <h4>Overlay Content</h4>
+          <p class="hint-text">Choose what metadata to show on the image:</p>
+          <label class="toggle">
+            <input type="checkbox" id="captureShowDate" checked>
+            Show Date/Time
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="captureShowLocation" checked>
+            Show Location
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="captureShowDevice" checked>
+            Show Device Info
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="captureShowOwner">
+            Show Owner Contact
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="prominentWatermark">
+            Prominent watermark (recommended for social)
+          </label>
+          
+        </form>
+        <div class="export-actions">
+          <button id="shareBtn" class="secondary-btn" disabled>Share</button>
+          <button id="copyCaptionBtn" class="secondary-btn" disabled>Copy Caption</button>
+          <button id="backBtn2" class="link-btn">Back to Home</button>
+        </div>
+        <div id="previewMeta" class="meta-display" aria-live="polite"></div>
+      </div>
+    </section>
+
+    
+  </main>
+
+  <footer class="app-footer">
+    <small>&copy; 2025 MetaView. Offline-first, no accounts.</small>
+  </footer>
+
+  <!-- Loading overlay -->
+  <div id="loadingOverlay" class="loading-overlay" hidden>
+    <div class="loading-dialog">
+      <div class="spinner-large"></div>
+      <p id="loadingMessage">Processing image…</p>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
