@@ -177,5 +177,61 @@
   </div>
 
   <script type="module" src="app.js"></script>
+  <!-- Visitor counter -->
+  <div id="visitor-counter" style="position:fixed;bottom:12px;right:12px;background:rgba(0,0,0,0.7);color:#fff;padding:8px 12px;border-radius:8px;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;font-size:14px;z-index:9999">Visitors: <span id="visitor-number">…</span></div>
+
+  <script>
+  (function(){
+    // Global visitor counter using CountAPI with a local fallback.
+    const NAMESPACE = 'metaview_app_abhi';
+    const KEY = 'visitors';
+    const START_VALUE = 642;
+    const el = document.getElementById('visitor-number');
+
+    function show(n){ if(el) el.textContent = n; }
+
+    // Fallback increment in localStorage if network fails
+    function fallback() {
+      try{
+        const k = 'metaview.visitors.local';
+        let v = parseInt(localStorage.getItem(k) || '0', 10) || 0;
+        v += 1;
+        localStorage.setItem(k, String(v));
+        show(START_VALUE + v);
+      }catch(e){
+        // last resort: show START_VALUE
+        show(START_VALUE);
+      }
+    }
+
+    // Try to create the counter with START_VALUE (ignored if already exists), then hit it.
+    async function updateRemote() {
+      try{
+        // Try create (if it already exists this may return an error; ignore)
+        await fetch(`https://api.countapi.xyz/create?namespace=${encodeURIComponent(NAMESPACE)}&key=${encodeURIComponent(KEY)}&value=${START_VALUE}`, {method: 'GET'});
+      }catch(e){ /* ignore */ }
+
+      try{
+        const res = await fetch(`https://api.countapi.xyz/hit/${encodeURIComponent(NAMESPACE)}/${encodeURIComponent(KEY)}`);
+        if(!res.ok) throw new Error('countapi hit failed');
+        const data = await res.json();
+        if(data && typeof data.value !== 'undefined'){
+          show(data.value);
+          return;
+        }
+      }catch(err){
+        console.warn('Visitor counter remote failed:', err);
+      }
+      // fallback if remote fails
+      fallback();
+    }
+
+    // Initialize UI immediately with START_VALUE to avoid layout shift
+    show(START_VALUE);
+    // Update remote in background
+    if(window.fetch) updateRemote(); else fallback();
+  })();
+  </script>
+
 </body>
 </html>
