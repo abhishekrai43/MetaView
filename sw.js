@@ -1,4 +1,4 @@
-const CACHE_NAME = 'metaview-v2';
+const CACHE_NAME = 'metaview-v3';
 const APP_SHELL = [
   './',
   './index.html',
