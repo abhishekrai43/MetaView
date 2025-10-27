@@ -9,12 +9,11 @@
   <title>MetaView</title>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="styles.css">
-  <!-- App icons (use files from AppIcons folder). Use relative paths so GitHub Pages serves them correctly under the project subpath. -->
-  <link rel="icon" href="AppIcons/Assets.xcassets/AppIcon.appiconset/_/16.png" sizes="16x16" type="image/png">
-  <link rel="icon" href="AppIcons/Assets.xcassets/AppIcon.appiconset/_/32.png" sizes="32x32" type="image/png">
-  <link rel="icon" href="AppIcons/Assets.xcassets/AppIcon.appiconset/_/64.png" sizes="64x64" type="image/png">
-  <link rel="apple-touch-icon" href="AppIcons/Assets.xcassets/AppIcon.appiconset/_/180.png">
-  <meta name="msapplication-TileImage" content="AppIcons/Assets.xcassets/AppIcon.appiconset/_/256.png">
+  <!-- App icons (use files from icons folder). Use relative paths so GitHub Pages serves them correctly under the project subpath. -->
+  <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="icon" href="icons/icon-512.png" sizes="512x512" type="image/png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="msapplication-TileImage" content="icons/icon-512.png">
 </head>
 <body>
   <header class="app-header">
@@ -185,29 +184,6 @@
   <!-- Load UMD build of localforage so code that expects window.localforage works reliably -->
   <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
   <script type="module" src="app.js"></script>
-  <div id="visitor-counter" style="position:fixed;bottom:12px;right:12px;background:rgba(0,0,0,0.7);color:#fff;padding:8px 12px;border-radius:8px;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;font-size:14px;z-index:9999">Visitors: <span id="visitor-number">…</span></div>
-
-  <script>
-  (function(){
-    const STORAGE_KEY = 'metaview.visitors.count';
-    const START = 642;
-    const el = document.getElementById('visitor-number');
-    function show(n){ if(el) el.textContent = n; }
-
-    try {
-      // Read current value or initialize
-      let v = parseInt(localStorage.getItem(STORAGE_KEY), 10);
-      if (!Number.isFinite(v)) v = START;
-      // Increment on each page load
-      v = v + 1;
-      localStorage.setItem(STORAGE_KEY, String(v));
-      show(v);
-    } catch (e) {
-      // If storage is unavailable, show the start value
-      show(START);
-    }
-  })();
-  </script>
 
 </body>
 </html>
