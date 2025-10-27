@@ -1,21 +1,27 @@
 import exifr from 'https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.esm.mjs';
 
 let localStore;
-try {
-  const { default: localforage } = await import('https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.mjs');
-  localStore = localforage;
-} catch (err) {
-  console.warn('localforage not available, settings will not persist across reloads', err);
-  const memory = new Map();
-  localStore = {
-    async getItem(key) {
-      return memory.get(key) ?? null;
-    },
-    async setItem(key, value) {
-      memory.set(key, value);
-      return value;
-    }
-  };
+// Prefer the global UMD `localforage` if it's already loaded (we include it in index.html).
+// Only attempt the dynamic ESM import if the global is not present.
+if (window.localforage) {
+  localStore = window.localforage;
+} else {
+  try {
+    const { default: localforage } = await import('https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.mjs');
+    localStore = localforage;
+  } catch (err) {
+    console.warn('localforage not available, settings will not persist across reloads', err);
+    const memory = new Map();
+    localStore = {
+      async getItem(key) {
+        return memory.get(key) ?? null;
+      },
+      async setItem(key, value) {
+        memory.set(key, value);
+        return value;
+      }
+    };
+  }
 }
 
 // History removed per request
